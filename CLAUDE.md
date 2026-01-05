@@ -39,15 +39,15 @@ python test.py --model ruta/al/modelo.pth
 
 ## Arquitectura
 
-### Modelo: EmotionClassifier (CNN Mejorada)
-- **Entrada**: Imágenes en escala de grises de 96x96
-- **Preprocesamiento**: Mejora de contraste CLAHE, normalización a [0,1]
-- **Data Augmentation**: Flip horizontal, rotación (±15°), ajuste de brillo
-- **Arquitectura**:
-  - 4 bloques convolucionales (32→64→128→256 filtros)
-  - Cada bloque: 2x(Conv2d → BatchNorm → ReLU) → MaxPool → Dropout(0.25)
-  - Capas completamente conectadas: 256×6×6 → 512 → 256 → NUM_CLASSES
-  - Dropout(0.5) en capas FC
+### Modelo: EmotionClassifier (Transfer Learning - ResNet-18 RGB)
+- **Entrada**: Imágenes RGB de 224x224
+- **Preprocesamiento**: Normalización ImageNet (mean/std)
+- **Data Augmentation**: Flip horizontal, rotación (±10°), brillo, Random Erasing
+- **Arquitectura base**: ResNet-18 preentrenado en ImageNet
+  - Capas congeladas: conv1, bn1, layer1, layer2 (features genéricas)
+  - Capas entrenables: layer3, layer4 (features específicas)
+  - Capa final: Dropout(0.5) → Linear(512, 256) → ReLU → Dropout(0.3) → Linear(256, 8)
+- **Regularización**: Weight decay (L2), Dropout múltiple, Random Erasing
 - **Balanceo de clases**: Pesos inversamente proporcionales a frecuencia
 - **Salida**: Predicciones de 8 clases de emociones
 
@@ -55,12 +55,14 @@ python test.py --model ruta/al/modelo.pth
 La definición de la clase `EmotionClassifier` en [train.py](train.py) y [test.py](test.py) DEBE ser idéntica. Cualquier cambio arquitectónico requiere actualizar ambos archivos, de lo contrario fallará la carga del modelo.
 
 ### Detalles del Entrenamiento
-- Usa optimizador Adam (lr=0.0005) con scheduler ReduceLROnPlateau
+- Optimizador AdamW con weight decay=0.01 (L2 regularization)
+- Learning rate: 0.001 (solo capas entrenables)
 - Función de pérdida CrossEntropyLoss con pesos de clase
-- Early stopping (paciencia de 15 épocas)
+- Scheduler ReduceLROnPlateau (factor=0.5, patience=4)
+- Early stopping (paciencia de 10 épocas)
 - División entrenamiento/validación: 80/20 estratificada
 - Tamaño de batch: 32
-- Máximo 100 épocas (early stopping detiene antes)
+- Máximo 50 épocas
 - Dispositivo: Detección automática CUDA/CPU
 
 ### Organización de Datos
