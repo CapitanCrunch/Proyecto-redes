@@ -234,7 +234,28 @@ class EmotionClassifier(nn.Module):
         return x
 
 # =============================================
-# Entrenamiento con Early Stopping
+# Mixup Data Augmentation (reduce overfitting)
+# =============================================
+def mixup_data(x, y, alpha=0.2):
+    """Mezcla ejemplos de entrenamiento para regularización"""
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size(0)
+    index = torch.randperm(batch_size).to(x.device)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    """Calcula pérdida para datos mezclados"""
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+# =============================================
+# Entrenamiento con Early Stopping + Mixup
 # =============================================
 def train_model(X_train, y_train, X_val, y_val, class_weights):
     # Crear datasets con augmentation solo para entrenamiento
@@ -251,8 +272,8 @@ def train_model(X_train, y_train, X_val, y_val, class_weights):
     # Función de pérdida con pesos de clase
     criterion = nn.CrossEntropyLoss(weight=class_weights.to(DEVICE))
 
-    # Optimizador con learning rate reducido
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
+    # Optimizador con learning rate reducido y weight_decay pequeño (mejor con Mixup)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=1e-5)
 
     # Scheduler mejorado
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -276,11 +297,12 @@ def train_model(X_train, y_train, X_val, y_val, class_weights):
     print(f"Imágenes de entrenamiento: {len(X_train)}")
     print(f"Imágenes de validación: {len(X_val)}")
     print(f"Data Augmentation: Activado")
+    print(f"Mixup: Activado (alpha=0.2)")
     print(f"Class Weights: {class_weights.numpy().round(2)}")
 
     # Bucle de entrenamiento
     for epoch in range(EPOCHS):
-        # Fase de entrenamiento
+        # Fase de entrenamiento con Mixup
         model.train()
         train_loss = 0.0
         train_correct = 0
@@ -289,14 +311,18 @@ def train_model(X_train, y_train, X_val, y_val, class_weights):
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
+            # Aplicar Mixup
+            mixed_inputs, labels_a, labels_b, lam = mixup_data(inputs, labels, alpha=0.2)
+
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            outputs = model(mixed_inputs)
+            loss = mixup_criterion(criterion, outputs, labels_a, labels_b, lam)
             loss.backward()
             optimizer.step()
 
             train_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs.data, 1)
+            # Para accuracy, usar etiquetas originales (no mezcladas)
+            _, predicted = torch.max(model(inputs).data, 1)
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
 
