@@ -31,6 +31,10 @@ def preprocess_image(image_path):
             print(f"Advertencia: No se pudo cargar {image_path}")
             return None
 
+        # Resize a 96x96
+        if image.shape[:2] != IMG_SIZE:
+            image = cv2.resize(image, IMG_SIZE)
+
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
