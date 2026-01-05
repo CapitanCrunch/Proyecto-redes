@@ -100,21 +100,9 @@ class EmotionClassifier(nn.Module):
     def __init__(self, num_classes):
         super(EmotionClassifier, self).__init__()
 
-        # Bloque 1
+        # Bloque 1 (64 filtros)
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.Conv2d(32, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Dropout(0.25)
-        )
-
-        # Bloque 2
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
@@ -124,8 +112,8 @@ class EmotionClassifier(nn.Module):
             nn.Dropout(0.25)
         )
 
-        # Bloque 3
-        self.conv3 = nn.Sequential(
+        # Bloque 2 (128 filtros)
+        self.conv2 = nn.Sequential(
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
@@ -136,8 +124,8 @@ class EmotionClassifier(nn.Module):
             nn.Dropout(0.25)
         )
 
-        # Bloque 4
-        self.conv4 = nn.Sequential(
+        # Bloque 3 (256 filtros)
+        self.conv3 = nn.Sequential(
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
@@ -148,10 +136,22 @@ class EmotionClassifier(nn.Module):
             nn.Dropout(0.25)
         )
 
+        # Bloque 4 (512 filtros)
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Dropout(0.25)
+        )
+
         # Capas fully connected
         self.fc_layers = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(256 * 6 * 6, 512),
+            nn.Linear(512 * 6 * 6, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(0.5),
@@ -201,7 +201,17 @@ def find_model():
     exit(1)
 
 # =============================================
-# Evaluación del modelo mejorada
+# TTA (Test-Time Augmentation)
+# =============================================
+def predict_with_tta(model, batch):
+    """Predice con imagen original + flip horizontal y promedia"""
+    outputs = model(batch)
+    flipped = torch.flip(batch, dims=[3])
+    outputs_flipped = model(flipped)
+    return (outputs + outputs_flipped) / 2
+
+# =============================================
+# Evaluación del modelo con TTA
 # =============================================
 def evaluate_model(model, X_test, y_test):
     test_tensor = torch.tensor(X_test).permute(0, 3, 1, 2).float().to(DEVICE)
@@ -211,7 +221,7 @@ def evaluate_model(model, X_test, y_test):
     with torch.no_grad():
         for i in range(0, len(test_tensor), BATCH_SIZE):
             batch = test_tensor[i:i+BATCH_SIZE]
-            outputs = model(batch)
+            outputs = predict_with_tta(model, batch)
             _, batch_pred = torch.max(outputs, 1)
             y_pred.extend(batch_pred.cpu().numpy())
 
