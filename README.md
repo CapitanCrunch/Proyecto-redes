@@ -23,7 +23,7 @@ El modelo clasifica imágenes en 8 categorías:
 
 1. Clonar el repositorio:
 ```bash
-git clone https://github.com/tu-usuario/Proyecto-redes.git
+git clone https://github.com/CapitanCrunch/Proyecto-redes.git
 cd Proyecto-redes
 ```
 
@@ -37,7 +37,7 @@ pip install -r requirements.txt
 ```
 Proyecto-redes/
 ├── data/
-│   ├── Train/           # Datos de entrenamiento
+│   ├── Train/                   # Datos de entrenamiento
 │   │   ├── ira/
 │   │   ├── desprecio/
 │   │   ├── asco/
@@ -46,7 +46,7 @@ Proyecto-redes/
 │   │   ├── neutralidad/
 │   │   ├── tristeza/
 │   │   └── sorpresa/
-│   └── Test/            # Datos de prueba
+│   └── Test/                   # Datos de prueba
 │       ├── ira/
 │       ├── desprecio/
 │       ├── asco/
@@ -55,11 +55,11 @@ Proyecto-redes/
 │       ├── neutralidad/
 │       ├── tristeza/
 │       └── sorpresa/
-├── train.py             # Script de entrenamiento
-├── test.py              # Script de evaluación
-├── camera.py            # Detección en tiempo real
-├── emotion_classifier.pth  # Modelo entrenado
-└── requirements.txt     # Dependencias
+├── train.py                   # Script de entrenamiento
+├── test.py                    # Script de evaluación
+├── camera.py                  # Detección en tiempo real
+├── emotion_classifier.pth     # Modelo entrenado
+└── requirements.txt           # Dependencias
 ```
 
 ## Uso
@@ -162,7 +162,3 @@ FC(8) → Salida (8 clases)
 - [AffectNet](https://www.kaggle.com/datasets/mstjebashazida/affectnet) - Complementario
 - RAF-DB - Expresiones reales
 - CK+ - Expresiones reales
-
-## Documentación Adicional
-
-Ver `DOCUMENTACION_PROYECTO.txt` para el historial completo de desarrollo, decisiones técnicas y lecciones aprendidas.
