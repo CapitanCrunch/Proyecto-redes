@@ -12,7 +12,7 @@ import argparse
 # Configuración con rutas relativas
 # =============================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEST_PATH = os.path.join(BASE_DIR, "Test")
+TEST_PATH = os.path.join(BASE_DIR, "data", "Test")
 MODEL_PATH = os.path.join(BASE_DIR, "emotion_classifier.pth")
 IMG_SIZE = (96, 96)
 NUM_CLASSES = 8

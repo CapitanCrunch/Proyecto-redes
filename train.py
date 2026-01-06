@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # Configuración
 # =============================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TRAIN_PATH = os.path.join(BASE_DIR, "Train")
+TRAIN_PATH = os.path.join(BASE_DIR, "data", "Train")
 MODEL_SAVE_PATH = os.path.join(BASE_DIR, "emotion_classifier.pth")
 
 IMG_SIZE = (96, 96)
